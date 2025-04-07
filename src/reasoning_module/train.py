@@ -24,13 +24,20 @@ def train_step(
 ):
     acc_steps = batch_size / (per_device_batch_size)
     output = model(xs, ys)
+    
+    # track accuracy
+    print("outputs", output.shape)
+    print("ys", ys.shape)
+    preds = (output >= 0)
+    accuracy = (preds[:, -1] == ys[:, -1]).float().mean() 
+    
     loss = loss_func(output, ys)
     loss = loss / (acc_steps)
     loss.backward()
     if (i_accumulate + 1) % (acc_steps) == 0:
         optimizer.step()
         optimizer.zero_grad()
-    return loss.detach().item(), output.detach()
+    return loss.detach().item(), output.detach(), accuracy.detach()
 
 
 def sample_seeds(total_seeds, count):
@@ -121,7 +128,7 @@ def train(model, args):
                 :,
             ]
 
-            loss, output = train_step(
+            loss, output, train_accuracy = train_step(
                 model,
                 xs_sample.cuda(),
                 ys_sample.cuda(),
@@ -146,6 +153,7 @@ def train(model, args):
                     "overall_loss": loss_total,
                     "n_points": curriculum.n_points,
                     "n_dims": curriculum.n_dims_truncated,
+                    "train_accuracy": train_accuracy,
                 },
                 step=i,
             )
