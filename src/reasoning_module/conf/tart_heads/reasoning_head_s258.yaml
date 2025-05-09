@@ -38,7 +38,7 @@ training:
 out_dir: ./outputs
 
 wandb:
-    name: "test"
-    entity: ""
-    project: ""
+    name: "tart-test-prob-logreg-bsize=128-lr=0.0001"
+    entity: "deniselj"
+    project: "tart-test"
     log_every_steps: 100

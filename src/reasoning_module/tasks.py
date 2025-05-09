@@ -36,11 +36,27 @@ def cross_entropy_zero_one(ys_pred, ys):
     target = ys
     return bce_loss(output, target)
 
+def cross_entropy_sms(ys_pred, ys):
+    #output = sigmoid(ys_pred)
+    #output = ys_pred
+    target = ys
+    print("output", output.shape)
+    print("target", target.shape)
+    return bce_loss(output[:, -1], target[:, -1])
+
+def cross_entropy_multi_class(ys_pred, ys):
+    ce_loss = torch.nn.CrossEntropyLoss()
+    #print("ys_pred", ys_pred.shape)
+    #print("ys", ys.shape)
+    #ys = torch.nn.functional.one_hot(ys.squeeze(-1).long(), num_classes=4)
+    #return ce_loss(ys_pred.squeeze(1), ys.float())
+    return ce_loss(ys_pred[:, -1, :].squeeze(1), ys[:, -1].long())
 
 def cross_entropy_no_reduction(ys_pred, ys):
     output = sigmoid(ys_pred)
     target = ys
     return bce_loss_no_reduce(output, target)
+
 
 
 sigmoid = torch.nn.Sigmoid()
@@ -89,6 +105,8 @@ def get_task_sampler(
     task_names_to_classes = {
         "probabilistic_logistic_regression": ProbabilisticLogisticRegression,
         "nl": NLSyntheticTask,
+        "sms": SMSClassificationTask,
+        "ag_news": AGClassificationTask,
     }
     if task_name in task_names_to_classes:
         task_cls = task_names_to_classes[task_name]
@@ -398,3 +416,71 @@ class ProbabilisticLogisticRegression(Task):
     @staticmethod
     def get_training_metric():
         return cross_entropy_zero_one
+
+
+
+class SMSClassificationTask(Task):
+    def __init__(
+        self,
+        n_dims: int,
+        batch_size: int,
+        pool_dict: dict = None,
+        seeds: List[int] = None,
+        **kwargs,
+    ):
+        super(SMSClassificationTask, self).__init__(
+            n_dims, batch_size, pool_dict, seeds
+        )
+
+    def evaluate(self, xs_b, w_b=None):
+        """ not needed as we are using real data
+        """
+        pass
+
+    @staticmethod
+    def generate_pool_dict(n_dims, num_tasks, **kwargs):
+        # Not needed for real dataset
+        return {}
+
+    @staticmethod
+    def get_metric():
+        #return cross_entropy_sms
+        return cross_entropy_multi_class
+
+    @staticmethod
+    def get_training_metric():
+        #return cross_entropy_sms
+        return cross_entropy_multi_class
+
+
+
+class AGClassificationTask(Task):
+    def __init__(
+        self,
+        n_dims: int,
+        batch_size: int,
+        pool_dict: dict = None,
+        seeds: List[int] = None,
+        **kwargs,
+    ):
+        super(SMSClassificationTask, self).__init__(
+            n_dims, batch_size, pool_dict, seeds
+        )
+
+    def evaluate(self, xs_b, w_b=None):
+        """ not needed as we are using real data
+        """
+        pass
+
+    @staticmethod
+    def generate_pool_dict(n_dims, num_tasks, **kwargs):
+        # Not needed for real dataset
+        return {}
+
+    @staticmethod
+    def get_metric():
+        return cross_entropy_multi_class
+
+    @staticmethod
+    def get_training_metric():
+        return cross_entropy_multi_class

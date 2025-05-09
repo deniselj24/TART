@@ -7,7 +7,7 @@ model:
     n_positions: 101
 
 training:
-    data: gaussian
+    data: sms
     task_kwargs: {}
     batch_size: 64
     learning_rate: 0.0001

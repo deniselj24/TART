@@ -1,6 +1,8 @@
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+
 from tqdm import tqdm
 from transformers import (
     AutoModelForCausalLM,
@@ -33,10 +35,236 @@ def build_model(conf):
             model_name=conf.model_name,
             lr_solver_head=conf.lr_solver_head,
         )
+    elif conf.family == "mlp":
+        model = MLP(num_classes=conf.num_classes)
+    elif conf.family == "logistic_regression":
+        model = LogisticRegression()
     else:
         raise NotImplementedError
 
     return model
+
+
+
+class MLP(nn.Module):
+    def __init__(
+        self,
+        num_classes=2,  # number of classes (positive or negative)
+        max_len=200,  # number of tokens # max for sms dataset is ~171 # max for RT Is 59 
+        vocab_size=18484, #agnews: 72049, #rt: 18484, #sms: 8956,  # number of in-features / vocab size 
+        hidden_features=[256, 256],  # number of hidden features
+        embedding_dim=512,  # embedding dimension
+        **kwargs,
+    ):
+        super(MLP, self).__init__()
+        self.num_classes = num_classes
+        self.max_len = max_len
+        self.vocab_size = vocab_size
+        self.hidden_features = hidden_features
+        self.embedding_dim = embedding_dim
+        #self.use_token_embeddings = use_token_embeddings
+        self.n_y = 1
+
+        # Build network layers
+        layers = []
+        layers.extend(
+            [
+                nn.Linear(self.max_len, self.hidden_features[0]),
+                nn.ReLU(),
+                # nn.GELU(),
+            ]
+        )
+
+        # Add remaining layers
+        for i in range(len(hidden_features) - 1):
+            layers.extend(
+                [
+                    nn.Linear(hidden_features[i], hidden_features[i + 1]),
+                    nn.ReLU(), #nn.GELU(),
+                ]
+            )
+
+        self.net = nn.Sequential(*layers)
+        self.fc_out = nn.Linear(hidden_features[-1], self.num_classes)
+
+    @staticmethod
+    def _combine(xs_b: torch.Tensor, ys_b: torch.Tensor):
+        """Interleaves the x's and the y's into a single sequence."""
+        bsize, points, dim = xs_b.shape
+        ys_b_wide = torch.cat(
+            (
+                ys_b.view(bsize, points, 1),
+                torch.zeros(bsize, points, dim - 1, device=ys_b.device),
+            ),
+            axis=2,
+        )
+        zs = torch.stack((xs_b, ys_b_wide), dim=2)
+        zs = zs.view(bsize, 2 * points, dim)
+        return zs
+
+    def _combine_gen(self, xs_b: torch.Tensor, ys_b: torch.Tensor):
+        """For sequences with more than one y's, Interleaves the x's
+        and the y's into a single sequence."""
+        bsize, points, dim = xs_b.shape
+        ys_list = []
+        for i in range(self.n_y):
+            ys_b_i = ys_b[i, ::]
+            ys_b_i_wide = torch.cat(
+                (
+                    ys_b_i.view(bsize, points, 1),
+                    torch.zeros(bsize, points, dim - 1, device=ys_b.device),
+                ),
+                axis=2,
+            )
+            ys_list.append(ys_b_i_wide)
+        zs = torch.stack((xs_b, *ys_list), dim=2)
+        zs = zs.view(bsize, (self.n_y + 1) * points, dim)
+
+        return zs
+
+    def forward(self, xs: torch.Tensor, ys: torch.Tensor, inds=None):
+        # Predicting a *sequence* of y's
+        if len(ys.shape) > 2:
+            print("ys shape", ys.shape)
+            inds = torch.arange(ys.shape[-1])
+            zs = self._combine_gen(xs, ys)
+
+            output = self.net(zs)
+            prediction = F.sigmoid(self.fc_out(output))
+
+            preds_y = []
+            for i in range(self.n_y):
+                preds_y.append(prediction[:, i :: self.y_step_size, 0][:, inds])
+            return preds_y
+        # Predicting a single y
+        else:
+            # if predicting a single y
+            if inds is None:
+                inds = torch.arange(ys.shape[1])
+            else:
+                inds = torch.tensor(inds)
+                if max(inds) >= ys.shape[1] or min(inds) < 0:
+                    raise ValueError(
+                        "inds contain indices where xs and ys are not defined"
+                    )
+            #print("xs", xs.shape)
+            #print("ys", ys.shape)
+            zs = self._combine(xs, ys)
+            #print("zs", zs.shape)
+            zs = zs.to('cuda')
+            output = self.net(zs)
+            #prediction = F.sigmoid(self.fc_out(output))
+            prediction = self.fc_out(output)
+            softmax = nn.Softmax(dim=-1)
+            prediction = softmax(prediction)
+            #print("model prediction shape", prediction.shape)
+            #print("model prediction shape after", prediction[:, ::2, :self.num_classes].shape)
+            return prediction[:, ::2, :self.num_classes][
+                :
+            ]  # return hiddens pertaining to x's indexes
+
+
+class LogisticRegression(nn.Module):
+    def __init__(
+        self,
+        num_classes=2,  # number of classes (positive or negative)
+        max_len=200,  # number of tokens # max for sms dataset is ~171 
+        vocab_size=8956,  # number of in-features / vocab size 
+        hidden_features=[256, 256],  # number of hidden features
+        embedding_dim=512,  # embedding dimension
+        **kwargs,
+    ):
+        super(LogisticRegression, self).__init__()
+        self.num_classes = num_classes
+        self.max_len = max_len
+        self.vocab_size = vocab_size
+        #self.hidden_features = hidden_features
+        #self.embedding_dim = embedding_dim
+        #self.use_token_embeddings = use_token_embeddings
+        self.n_y = 1
+
+        # Build network layers
+        layers = []
+        layers.extend(
+            [
+                #nn.Linear(self.max_len, self.num_classes),
+            ]
+        )
+        self.net = nn.Sequential(*layers)
+        self.fc_out = nn.Linear(self.max_len, self.num_classes)
+
+    @staticmethod
+    def _combine(xs_b: torch.Tensor, ys_b: torch.Tensor):
+        """Interleaves the x's and the y's into a single sequence."""
+        bsize, points, dim = xs_b.shape
+        ys_b_wide = torch.cat(
+            (
+                ys_b.view(bsize, points, 1),
+                torch.zeros(bsize, points, dim - 1, device=ys_b.device),
+            ),
+            axis=2,
+        )
+        zs = torch.stack((xs_b, ys_b_wide), dim=2)
+        zs = zs.view(bsize, 2 * points, dim)
+        return zs
+
+    def _combine_gen(self, xs_b: torch.Tensor, ys_b: torch.Tensor):
+        """For sequences with more than one y's, Interleaves the x's
+        and the y's into a single sequence."""
+        bsize, points, dim = xs_b.shape
+        ys_list = []
+        for i in range(self.n_y):
+            ys_b_i = ys_b[i, ::]
+            ys_b_i_wide = torch.cat(
+                (
+                    ys_b_i.view(bsize, points, 1),
+                    torch.zeros(bsize, points, dim - 1, device=ys_b.device),
+                ),
+                axis=2,
+            )
+            ys_list.append(ys_b_i_wide)
+        zs = torch.stack((xs_b, *ys_list), dim=2)
+        zs = zs.view(bsize, (self.n_y + 1) * points, dim)
+
+        return zs
+
+    def forward(self, xs: torch.Tensor, ys: torch.Tensor, inds=None):
+        # Predicting a *sequence* of y's
+        if len(ys.shape) > 2:
+            inds = torch.arange(ys.shape[-1])
+            zs = self._combine_gen(xs, ys)
+            #embeds = self.embeddings(zs)
+
+            #output = self.net(
+            #    zs,
+            #)
+            #prediction = F.sigmoid(self.fc_out(output))
+            prediction = F.sigmoid(self.fc_out(zs))
+
+            preds_y = []
+            for i in range(self.n_y):
+                preds_y.append(prediction[:, i :: self.y_step_size, 0][:, inds])
+            return preds_y
+        # Predicting a single y
+        else:
+            # if predicting a single y
+            if inds is None:
+                inds = torch.arange(ys.shape[1])
+            else:
+                inds = torch.tensor(inds)
+                if max(inds) >= ys.shape[1] or min(inds) < 0:
+                    raise ValueError(
+                        "inds contain indices where xs and ys are not defined"
+                    )
+            zs = self._combine(xs, ys)
+            #embeds = self.embeddings(zs)
+            #output = self.net(zs)
+            #prediction = F.sigmoid(self.fc_out(output))
+            prediction = F.sigmoid(self.fc_out(zs))
+
+            return prediction[:, ::2, 0][
+                :, inds
+            ]  # return hiddens pertaining to x's indexe
 
 
 class TransformerLanguageModel(nn.Module):

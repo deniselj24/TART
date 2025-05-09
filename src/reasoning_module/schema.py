@@ -14,7 +14,7 @@ from funcy import merge
 
 
 model_schema = {
-    "family": merge(tstring, allowed(["gpt2", "gpt-neo"])),
+    "family": merge(tstring, allowed(["gpt2", "gpt-neo", "mlp", "logistic_regression"])),
     "n_positions": merge(tinteger, required),  # maximum context length
     "n_dims": merge(tinteger, required),  # latent dimension
     "n_embd": merge(tinteger, required),
@@ -35,6 +35,7 @@ model_schema = {
         nullable,
     ),
     "lr_solver_head": merge(tboolean, default(False)),
+    "num_classes": merge(tinteger, default(2)),
 }
 
 curriculum_base_schema = {
@@ -53,6 +54,8 @@ curriculum_schema = {
 TASK_LIST = [
     "probabilistic_logistic_regression",
     "nladap",
+    "sms",
+    "ag_news",
 ]
 
 training_schema = {
@@ -60,7 +63,7 @@ training_schema = {
     "task_kwargs": merge(tdict, required),
     "num_tasks": merge(tinteger, nullable, default(None)),
     "num_training_examples": merge(tinteger, nullable, default(None)),
-    "data": merge(tstring, allowed(["gaussian", "multigaussian", "nl", "nlreal"])),
+    "data": merge(tstring, allowed(["gaussian", "multigaussian", "nl", "nlreal", "sms", "rt", "ag_news"])),
     "batch_size": merge(tinteger, default(64)),
     "weight_multiplier": merge(tinteger, default(1)),
     "variable_noise": merge(tboolean, default(False)),

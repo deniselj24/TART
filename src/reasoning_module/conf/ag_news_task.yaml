@@ -1,0 +1,46 @@
+inherit: 
+    - base.yaml
+
+model:
+  family: mlp # logistic_regression
+  n_dims: 16
+  n_positions: 64
+  num_classes: 4
+  model_name:  "EleutherAI/gpt-neo-125m" 
+  lr_solver_head: True
+
+training:
+    task: sms
+    batch_size: 64
+    per_device_batch_size: 64
+    learning_rate: 0.0001
+    save_every_steps: 500
+    keep_every_steps: 1000
+    train_steps: 50001
+    weight_multiplier: 10
+    data: ag_news
+
+    curriculum:
+        dims:
+            start: 16 #4 #12 #4 #12 #4
+            end: 16
+            inc: 4
+            interval: 100
+        points:
+            start: 4 #16 #64 #16 #64 #16
+            end: 64
+            inc: 4
+            interval: 1000
+        probabilities:
+            start: 1 
+            end: 1 
+            inc: 1
+            interval: 20000
+
+out_dir: ./results
+
+wandb:
+    name: "mlp_bsize=64_lr=1e4_curriculum_1_1"
+    entity: "deniselj"
+    project: "train-ag_news-mlp"
+    log_every_steps: 10

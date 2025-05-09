@@ -26,8 +26,8 @@ def train_step(
     output = model(xs, ys)
     
     # track accuracy
-    print("outputs", output.shape)
-    print("ys", ys.shape)
+    #print("outputs", output.shape)
+    #print("ys", ys.shape)
     preds = (output >= 0)
     accuracy = (preds[:, -1] == ys[:, -1]).float().mean() 
     

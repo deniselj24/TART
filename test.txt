@@ -1,0 +1,60 @@
+Running with: Quinfig
+-------
+config: src/reasoning_module/conf/tomatoes_task.yaml
+inherit:
+- /home/deniselj/deniselj/Desktop/tart-denise/src/reasoning_module/conf/base.yaml
+model:
+  family: logistic_regression
+  lr_solver_head: true
+  model_name: EleutherAI/gpt-neo-125m
+  n_dims: 16
+  n_embd: 256
+  n_head: 8
+  n_layer: 12
+  n_positions: 64
+  n_y: 1
+  num_classes: 2
+out_dir: ./results
+test_run: false
+training:
+  batch_size: 64
+  curriculum:
+    dims:
+      end: 16
+      inc: 4
+      interval: 100
+      start: 16
+    points:
+      end: 64
+      inc: 4
+      interval: 100
+      start: 4
+    probabilities:
+      end: 1
+      inc: 1
+      interval: 20000
+      start: 1
+  data: rt
+  keep_every_steps: 1000
+  learning_rate: 0.0001
+  lr_scheduler: 500
+  num_tasks: null
+  num_training_examples: null
+  per_device_batch_size: 64
+  resume_id: null
+  save_every_steps: 500
+  task: sms
+  task_kwargs: {}
+  train_steps: 50001
+  variable_noise: false
+  weight_multiplier: 10
+wandb:
+  entity: deniselj
+  log_every_steps: 10
+  name: mlp_bsize=64_lr=1e4_curriculum_1_1
+  notes: ''
+  project: train-rotten-tomatoes-mlp-icl
+
+vocab size 18484
+torch.Size([64, 4])
+

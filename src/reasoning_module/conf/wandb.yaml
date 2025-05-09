@@ -1,5 +1,5 @@
 wandb:
-    project: in-context-training
-    entity: your-entity
+    project: train-sms
+    entity: deniselj
     notes:
     log_every_steps: 100

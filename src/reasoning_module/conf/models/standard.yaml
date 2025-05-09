@@ -1,5 +1,5 @@
 model:
-    family: gpt2
+    family: mlp
     n_embd: 256
     n_layer: 12
     n_head: 8
