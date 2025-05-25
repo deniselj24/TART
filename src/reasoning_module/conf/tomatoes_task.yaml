@@ -7,6 +7,7 @@ model:
   n_positions: 64
   model_name:  "EleutherAI/gpt-neo-125m" 
   lr_solver_head: True
+  num_classes: 1
 
 training:
     task: sms
@@ -39,7 +40,7 @@ training:
 out_dir: ./results
 
 wandb:
-    name: "mlp_bsize=64_lr=1e4_curriculum_1_1"
+    name: "mlp_bsize=64_lr=1e4_curriculum_1_1_nlayers=12"
     entity: "deniselj"
-    project: "train-icl-rotten-tomatoes-mlp"
+    project: "train-rotten-tomatoes"
     log_every_steps: 10

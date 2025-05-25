@@ -13,8 +13,8 @@ training:
     batch_size: 64
     per_device_batch_size: 64
     learning_rate: 0.0001
-    save_every_steps: 500
-    keep_every_steps: 1000
+    save_every_steps: 5000
+    keep_every_steps: 5000
     train_steps: 50001
     weight_multiplier: 10
     data: sms
@@ -39,7 +39,7 @@ training:
 out_dir: ./results
 
 wandb:
-    name: "mlp_bsize=64_lr=1e4_curriculum_4_64"
+    name: "mlp_bsize=64_lr=1e4_curriculum_4_64_nlayers=6"
     entity: "deniselj"
     project: "train-sms"
     log_every_steps: 10

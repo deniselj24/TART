@@ -14,8 +14,8 @@ training:
     batch_size: 64
     per_device_batch_size: 64
     learning_rate: 0.0001
-    save_every_steps: 500
-    keep_every_steps: 1000
+    save_every_steps: 5000
+    keep_every_steps: 5000
     train_steps: 50001
     weight_multiplier: 10
     data: ag_news
@@ -40,7 +40,7 @@ training:
 out_dir: ./results
 
 wandb:
-    name: "mlp_bsize=64_lr=1e4_curriculum_1_1"
+    name: "mlp_bsize=64_lr=1e4_curriculum_1_1_no_icl"
     entity: "deniselj"
     project: "train-ag_news-mlp"
     log_every_steps: 10

@@ -2,5 +2,5 @@ model:
     family: mlp
     n_embd: 256
     n_layer: 12
-    n_head: 8
+    n_head: 0
     n_y: 1

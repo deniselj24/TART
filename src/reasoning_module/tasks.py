@@ -37,12 +37,12 @@ def cross_entropy_zero_one(ys_pred, ys):
     return bce_loss(output, target)
 
 def cross_entropy_sms(ys_pred, ys):
-    #output = sigmoid(ys_pred)
-    #output = ys_pred
+    output = sigmoid(ys_pred)
+    output = ys_pred
     target = ys
-    print("output", output.shape)
-    print("target", target.shape)
-    return bce_loss(output[:, -1], target[:, -1])
+    #print("output", output.shape)
+    #print("target", target.shape)
+    return bce_loss(output[:, -1].squeeze(-1), target[:, -1])
 
 def cross_entropy_multi_class(ys_pred, ys):
     ce_loss = torch.nn.CrossEntropyLoss()
@@ -50,7 +50,13 @@ def cross_entropy_multi_class(ys_pred, ys):
     #print("ys", ys.shape)
     #ys = torch.nn.functional.one_hot(ys.squeeze(-1).long(), num_classes=4)
     #return ce_loss(ys_pred.squeeze(1), ys.float())
-    return ce_loss(ys_pred[:, -1, :].squeeze(1), ys[:, -1].long())
+    # Correct ICL return ce_loss(ys_pred[:, -1, :].squeeze(1), ys[:, -1].long())
+    # no ICL setting 
+    bsize, examples, n_classes = ys_pred.shape
+    preds = ys_pred.reshape(bsize * examples, n_classes)
+    ys = ys.reshape(bsize * examples)
+    #return ce_loss(ys_pred[:, :, :].squeeze(1), ys[:, :].long())
+    return ce_loss(preds, ys.long())
 
 def cross_entropy_no_reduction(ys_pred, ys):
     output = sigmoid(ys_pred)
@@ -444,13 +450,13 @@ class SMSClassificationTask(Task):
 
     @staticmethod
     def get_metric():
-        #return cross_entropy_sms
-        return cross_entropy_multi_class
+        return cross_entropy_sms
+        #return cross_entropy_multi_class
 
     @staticmethod
     def get_training_metric():
-        #return cross_entropy_sms
-        return cross_entropy_multi_class
+        return cross_entropy_sms
+        #return cross_entropy_multi_class
 
 
 

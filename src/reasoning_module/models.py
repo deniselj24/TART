@@ -51,7 +51,7 @@ class MLP(nn.Module):
         self,
         num_classes=2,  # number of classes (positive or negative)
         max_len=200,  # number of tokens # max for sms dataset is ~171 # max for RT Is 59 
-        vocab_size=18484, #agnews: 72049, #rt: 18484, #sms: 8956,  # number of in-features / vocab size 
+        vocab_size=18484, #18484, #agnews: 72049, #rt: 18484, #sms: 8956,  # number of in-features / vocab size 
         hidden_features=[256, 256],  # number of hidden features
         embedding_dim=512,  # embedding dimension
         **kwargs,

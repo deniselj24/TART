@@ -115,7 +115,7 @@ class SMSDataSampler(DataSampler):
         self.bias = bias
         self.scale = scale
         import json, re
-        with open("src/reasoning_module/rt_vocabulary.json") as f:
+        with open("src/reasoning_module/vocabulary.json") as f:
             self.vocabulary = json.load(f) # dict mapping words to ids 
         self.vocabulary_size = len(self.vocabulary)
         print("vocab size", self.vocabulary_size)      
@@ -172,7 +172,7 @@ class RTDataSampler(DataSampler):
         self.max_len = 200  
         # Load the dataset
         (self.X_train, self.y_train), (self.X_test, self.y_test) = load_data(
-            data_path="~/deniselj/Desktop/tart-denise/datasets/", dataset="rt", input_key="text", seed=42
+            data_path="/common/TART/datasets/", dataset="rt", input_key="text", seed=42
         )
         
         def tokenize_and_pad(text: str) -> list:
@@ -221,7 +221,8 @@ class AGDataSampler(DataSampler):
         self.max_len = 200  # max around 170 tokens
         # Load the dataset
         (self.X_train, self.y_train), (self.X_test, self.y_test) = load_data(
-            data_path="~/deniselj/Desktop/tart-denise/datasets/", dataset="ag_news", input_key="text", seed=42
+            #data_path="~/deniselj/Desktop/tart-denise/datasets/", dataset="ag_news", input_key="text", seed=42
+            data_path="/common/TART/datasets/", dataset="ag_news", input_key="text", seed=42
         )
         
         def tokenize_and_pad(text: str) -> list:

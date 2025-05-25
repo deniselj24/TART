@@ -36,10 +36,12 @@ def train_step(
     #print("output", output)
     #preds = (F.sigmoid(output) >= 0.5)
     preds = torch.argmax(output, dim=-1) # for multiclass
-    print("preds", preds.shape)
-    print("ys", ys.shape)
+    #print("preds", preds.shape)
+    #print("ys", ys.shape)
+    # ICL 
     accuracy = (preds[:, -1] == ys[:, -1]).float().mean() 
-    
+    #accuracy = (preds == ys).float().mean()
+
     loss = loss_func(output, ys)
     loss = loss / (acc_steps)
     loss.backward()
@@ -170,6 +172,7 @@ def train(model, args):
                 #preds = (F.sigmoid(output) >= 0.5)
                 preds = torch.argmax(output, dim=-1)
                 test_accuracy = (preds[:, -1] == ys[:, -1]).float().mean() 
+                #test_accuracy = (preds == ys).float().mean()
                 test_loss = loss_func(output, ys)
             model.train()
             
